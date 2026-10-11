@@ -38,14 +38,7 @@ SELECT
   COUNT(k.id) AS total,
   COUNT(CASE WHEN k.tipe_kunjungan = 'Rawat Inap' THEN 1 END) AS rawat_inap,
   COUNT(CASE WHEN k.tipe_kunjungan = 'IGD' THEN 1 END) AS igd,
-  COALESCE(
-    ROUND(
-      100.0 * COUNT(CASE WHEN k.tipe_kunjungan IN ('Rawat Inap', 'IGD') THEN 1 END)
-      / NULLIF(COUNT(k.id), 0),
-      1
-    ),
-    0
-  ) AS persen_inap_igd,
+  COALESCE(ROUND(100.0 * COUNT(CASE WHEN k.tipe_kunjungan IN ('Rawat Inap', 'IGD') THEN 1 END) / NULLIF(COUNT(k.id), 0), 1), 0) AS persen_inap_igd,
   CASE
     WHEN COUNT(k.id) >= 8 THEN 'Sangat Sibuk'
     WHEN COUNT(k.id) >= 4 THEN 'Sibuk'
@@ -57,7 +50,7 @@ LEFT JOIN kunjungan k ON d.id = k.dokter_id
 GROUP BY d.id, d.nama, d.spesialisasi
 ORDER BY
   total DESC,
-  nama ASC;
+  nama ASC
 
 
 -- 1.2 Sebaran triase IGD per dokter
@@ -83,7 +76,7 @@ WHERE k.tipe_kunjungan = 'IGD'
 GROUP BY d.id, d.nama
 ORDER BY
   total_igd DESC,
-  nama ASC;
+  nama ASC
 
 
 -- 1.3 Daftar prioritas follow-up IGD
@@ -105,7 +98,7 @@ SELECT
     WHEN k.triase_level <= 2 AND (p.umur >= 60 OR p.umur <= 5) THEN 'Hari Ini'
     WHEN k.triase_level <= 2 THEN 'Maks 3 Hari'
     WHEN k.triase_level = 3 THEN 'Maks 7 Hari'
-    ELSE 'Kontrol Biasa'
+    Else 'Kontrol Biasa'
   END AS jadwal_followup,
   COALESCE(p.no_asuransi, 'Bayar Mandiri') AS jaminan
 FROM pasien p
@@ -118,7 +111,7 @@ ORDER BY
     WHEN 'Maks 7 Hari' THEN 3
     WHEN 'Kontrol Biasa' THEN 4
   END,
-  k.id;
+  k.id
 
 
 /* ==========================================================
@@ -137,11 +130,7 @@ SELECT
   d.spesialisasi,
   SUM(k.biaya) AS total_revenue,
   ROUND(AVG(NULLIF(k.biaya, 0)), 0) AS rata_berbayar,
-  ROUND(
-    100.0 * SUM(CASE WHEN k.tipe_kunjungan = 'Rawat Inap' THEN k.biaya ELSE 0 END)
-    / NULLIF(SUM(k.biaya), 0),
-    1
-  ) AS persen_dari_inap,
+  ROUND(100.0 * SUM(CASE WHEN k.tipe_kunjungan = 'Rawat Inap' THEN k.biaya ELSE 0 END) / NULLIF(SUM(k.biaya), 0), 1) AS persen_dari_inap,
   CASE
     WHEN SUM(k.biaya) >= 20000000 THEN 'Penyumbang Utama'
     WHEN SUM(k.biaya) >= 1000000 THEN 'Penyumbang Menengah'
@@ -152,8 +141,7 @@ JOIN kunjungan k ON d.id = k.dokter_id
 GROUP BY d.id, d.nama, d.spesialisasi
 ORDER BY
   total_revenue DESC,
-  nama ASC;
-
+  nama ASC
 
 -- 2.2 Tren revenue bulanan per tipe kunjungan
 -- Revenue bulanan per tipe kunjungan dengan bulan sebagai kolom (pivot manual, Januari sampai April 2025).
@@ -169,15 +157,13 @@ SELECT
   SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-04%' THEN k.biaya ELSE 0 END) AS apr,
   SUM(k.biaya) AS total,
   CASE
-    WHEN SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-02%' THEN k.biaya ELSE 0 END)
-       < SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-03%' THEN k.biaya ELSE 0 END) THEN 'Naik'
-    WHEN SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-02%' THEN k.biaya ELSE 0 END)
-       > SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-03%' THEN k.biaya ELSE 0 END) THEN 'Turun'
+    WHEN SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-02%' THEN k.biaya ELSE 0 END) < SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-03%' THEN k.biaya ELSE 0 END) THEN 'Naik'
+    WHEN SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-02%' THEN k.biaya ELSE 0 END) > SUM(CASE WHEN k.tanggal_kunjungan LIKE '2025-03%' THEN k.biaya ELSE 0 END) THEN 'Turun'
     ELSE 'Stabil'
   END AS tren_feb_ke_mar
 FROM kunjungan k
 GROUP BY 1
-ORDER BY total DESC;
+ORDER BY total DESC
 
 
 -- 2.3 Tingkat biaya dan tagihan pasien mandiri
@@ -198,15 +184,12 @@ SELECT
   SUM(k.biaya) AS total,
   COUNT(CASE WHEN p.no_asuransi IS NULL THEN 1 END) AS jml_mandiri,
   SUM(CASE WHEN p.no_asuransi IS NULL THEN k.biaya ELSE 0 END) AS revenue_mandiri,
-  ROUND(
-    100.0 * SUM(CASE WHEN p.no_asuransi IS NULL THEN k.biaya ELSE 0 END)
-    / NULLIF(SUM(k.biaya), 0),
-    1
-  ) AS persen_mandiri
+  ROUND(100.0 * SUM(CASE WHEN p.no_asuransi IS NULL THEN k.biaya ELSE 0 END) / NULLIF(SUM(k.biaya), 0), 1) AS persen_mandiri
 FROM kunjungan k
 JOIN pasien p ON k.pasien_id = p.id
 GROUP BY 1
-ORDER BY total DESC;
+ORDER BY total DESC
+
 
 
 /* ==========================================================
@@ -245,7 +228,7 @@ JOIN kunjungan k ON p.id = k.pasien_id
 GROUP BY p.id, p.nama, p.no_asuransi
 ORDER BY
   total_biaya DESC,
-  nama ASC;
+  nama ASC
 
 
 -- 3.2 Skor keparahan dan daftar tindak lanjut
@@ -268,29 +251,27 @@ SELECT
         WHEN d.tingkat_keparahan = 'Sedang' THEN 2
         WHEN d.tingkat_keparahan = 'Berat' THEN 3
       END
-    ),
-    0
-  ) AS skor_keparahan,
+    ), 0) AS skor_keparahan,
   IF(COUNT(d.id) = 0, 'Lengkapi Diagnosa', 'Tunjuk Case Manager') AS tindak_lanjut
 FROM kunjungan k
 LEFT JOIN diagnosa d ON k.id = d.kunjungan_id
 JOIN pasien p ON k.pasien_id = p.id
 GROUP BY
   k.id,
-  p.nama,
+  p.nama, 
   k.tipe_kunjungan
 HAVING
-  SUM(
-    CASE
-      WHEN d.tingkat_keparahan = 'Ringan' THEN 1
-      WHEN d.tingkat_keparahan = 'Sedang' THEN 2
-      WHEN d.tingkat_keparahan = 'Berat' THEN 3
-    END
-  ) >= 4
+    SUM(
+      CASE
+        WHEN d.tingkat_keparahan = 'Ringan' THEN 1
+        WHEN d.tingkat_keparahan = 'Sedang' THEN 2
+        WHEN d.tingkat_keparahan = 'Berat' THEN 3
+      END
+    ) >= 4
   OR COUNT(d.id) = 0
 ORDER BY
   skor_keparahan DESC,
-  k.id;
+  k.id
 
 
 -- 3.3 Ringkasan eksekutif per kelompok umur
@@ -311,24 +292,14 @@ SELECT
   COUNT(k.id) AS jml_kunjungan,
   SUM(k.biaya) AS total_revenue,
   ROUND(AVG(NULLIF(k.biaya, 0)), 0) AS rata_biaya_berbayar,
-  ROUND(
-    100.0 * COUNT(CASE WHEN k.tipe_kunjungan IN ('Rawat Inap', 'IGD') THEN 1 END)
-    / NULLIF(COUNT(k.id), 0),
-    1
-  ) AS persen_inap_igd,
-  ROUND(
-    100.0 * COUNT(CASE WHEN p.no_asuransi IS NULL THEN 1 END)
-    / NULLIF(COUNT(k.id), 0),
-    1
-  ) AS persen_mandiri,
+  ROUND(100.0 * COUNT(CASE WHEN k.tipe_kunjungan IN ('Rawat Inap', 'IGD') THEN 1 END) / NULLIF(COUNT(k.id), 0), 1) AS persen_inap_igd,
+  ROUND(100.0 * COUNT(CASE WHEN p.no_asuransi IS NULL THEN 1 END) / NULLIF(COUNT(k.id), 0), 1) AS persen_mandiri,
   CASE
-    WHEN 100.0 * COUNT(CASE WHEN k.tipe_kunjungan IN ('Rawat Inap', 'IGD') THEN 1 END)
-         / NULLIF(COUNT(k.id), 0) >= 50 THEN 'Program Pencegahan'
-    WHEN 100.0 * COUNT(CASE WHEN p.no_asuransi IS NULL THEN 1 END)
-         / NULLIF(COUNT(k.id), 0) >= 25 THEN 'Edukasi Asuransi'
+    WHEN 100.0 * COUNT(CASE WHEN k.tipe_kunjungan IN ('Rawat Inap', 'IGD') THEN 1 END) / NULLIF(COUNT(k.id), 0) >= 50 THEN 'Program Pencegahan'
+    WHEN 100.0 * COUNT(CASE WHEN p.no_asuransi IS NULL THEN 1 END) / NULLIF(COUNT(k.id), 0) >= 25 THEN 'Edukasi Asuransi'
     ELSE 'Pertahankan Layanan'
   END AS rekomendasi
 FROM pasien p
 JOIN kunjungan k ON p.id = k.pasien_id
 GROUP BY 1
-ORDER BY total_revenue DESC;
+ORDER BY total_revenue DESC
