@@ -16,7 +16,7 @@ Skema (dataset-nya tidak disertakan di repositori ini):
 
 Skill yang dipakai: Join, Logika Kondisional (CASE WHEN), Fungsi Agregat, Penanganan NULL (COALESCE, NULLIF), Penyaringan Grup (HAVING), Scoring dan Segmentasi
 
-Tools: SQL (DuckDB)
+Tools: SQL
 
 */
 
