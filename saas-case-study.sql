@@ -364,12 +364,13 @@ ORDER BY bulan;
 WITH
 pembayaran_pengguna AS (
   SELECT
+    pem.pengguna_id,
     pen.kota,
     pen.nama,
     SUM(pem.jumlah) AS total_bayar
   FROM pembayaran pem
   JOIN pengguna pen ON pen.id = pem.pengguna_id
-  GROUP BY pen.kota, pen.nama
+  GROUP BY pem.pengguna_id, pen.kota, pen.nama
 ),
 per_kota AS (
   SELECT
